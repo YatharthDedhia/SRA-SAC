@@ -15,7 +15,7 @@
  */
 int weights[4] = {3, 1, -1, -3};
 int weights_inv[4] = {1, 5, -5, -1};
-
+int count_white = 0;
 /*
  * Motor value boundts
  */
@@ -60,7 +60,7 @@ void calculate_correction()
 
 void calculate_error(int wt_inv[])
 {
-    printf("IR READING %d\n",wt_inv[0]);
+    printf("IR READING %d\n", wt_inv[0]);
     int all_black_flag = 1; // assuming initially all black condition
     float weighted_sum = 0, sum = 0;
     float pos = 0;
@@ -135,9 +135,10 @@ void line_follow_task(void *arg)
 
         int x = gpio_get_level(15);
         printf("\n");
-        if (line_sensor_readings.adc_reading[0] > 900 && line_sensor_readings.adc_reading[11] < 900 && line_sensor_readings.adc_reading[2] < 900 && line_sensor_readings.adc_reading[3] > 900)
+        if (line_sensor_readings.adc_reading[0] > 900 && line_sensor_readings.adc_reading[1] < 900 && line_sensor_readings.adc_reading[2] < 900 && line_sensor_readings.adc_reading[3] > 900)
         {
             printf("INVERSION");
+            count_white = 0;
             for (int i = 0; i < 4; i++)
             {
                 line_sensor_readings.adc_reading[i] = 1000 - line_sensor_readings.adc_reading[i];
@@ -156,7 +157,7 @@ void line_follow_task(void *arg)
         else if (line_sensor_readings.adc_reading[0] < 700 && line_sensor_readings.adc_reading[1] < 700 && line_sensor_readings.adc_reading[2] < 700 && line_sensor_readings.adc_reading[3] < 700)
         {
             printf("ALL BLACK");
-
+            count_white = 0;
             calculate_error(weights);
             calculate_correction();
             lsa_to_bar();
@@ -171,7 +172,7 @@ void line_follow_task(void *arg)
         else if ((line_sensor_readings.adc_reading[0] < 500 && line_sensor_readings.adc_reading[1] > 500 && line_sensor_readings.adc_reading[2] > 500 && line_sensor_readings.adc_reading[3] < 500))
         {
             printf("LINE DETECTED");
-
+            count_white = 0;
             calculate_error(weights);
             calculate_correction();
             lsa_to_bar();
@@ -211,7 +212,12 @@ void line_follow_task(void *arg)
         else if ((line_sensor_readings.adc_reading[0] > 500 && line_sensor_readings.adc_reading[1] > 500 && line_sensor_readings.adc_reading[2] > 500 && line_sensor_readings.adc_reading[3] < 500))
         {
             printf("LEFT LINE");
-
+            count_white++;
+            if (count_white > 20)
+            {
+                set_motor_speed(MOTOR_A_0, MOTOR_STOP, 0);
+                set_motor_speed(MOTOR_A_1, MOTOR_STOP, 0);
+            }
             calculate_error(weights);
             calculate_correction();
             lsa_to_bar();
@@ -227,7 +233,12 @@ void line_follow_task(void *arg)
         else if ((line_sensor_readings.adc_reading[0] < 500 && line_sensor_readings.adc_reading[1] > 500 && line_sensor_readings.adc_reading[2] > 500 && line_sensor_readings.adc_reading[3] > 500))
         {
             printf("RIGHT LINE");
-
+            count_white++;
+            if (count_white > 20)
+            {
+                set_motor_speed(MOTOR_A_0, MOTOR_STOP, 0);
+                set_motor_speed(MOTOR_A_1, MOTOR_STOP, 0);
+            }
             calculate_error(weights);
             calculate_correction();
             lsa_to_bar();
@@ -242,7 +253,12 @@ void line_follow_task(void *arg)
         else if (line_sensor_readings.adc_reading[0] > 500 && line_sensor_readings.adc_reading[1] > 500 && line_sensor_readings.adc_reading[2] > 500 && line_sensor_readings.adc_reading[3] > 500)
         {
             printf("ALL WHITE");
-
+            count_white++;
+            if (count_white > 20)
+            {
+                set_motor_speed(MOTOR_A_0, MOTOR_STOP, 0);
+                set_motor_speed(MOTOR_A_1, MOTOR_STOP, 0);
+            }
             calculate_error(weights);
             calculate_correction();
             lsa_to_bar();
